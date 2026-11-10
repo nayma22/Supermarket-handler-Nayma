@@ -62,6 +62,11 @@ The email groups products the same way as `expiry-check.json`: expired → remov
 The other three emails go to `@example.com` addresses, so Gmail may send you a "delivery failed" message. That is expected.
 
 ### Turn on Gemini (optional, task 4.3)
+**Status: future scope.** The Gemini node is built into the workflow but is switched off and has not been tested yet. Today the emails are sent without the AI tip.
+
+**What it adds:** the discount rule only looks at days left. Gemini also looks at quantity, and suggests a bigger discount and a shelf tip for the product most likely to go unsold. It only suggests; it never changes a price.
+
+To turn it on later:
 1. Get a free API key at [aistudio.google.com](https://aistudio.google.com).
 2. **Gemini Tip (optional)** → create a **Header Auth** credential: Name `x-goog-api-key`, Value = your key.
 3. Right-click the node → **Activate**, then run the workflow again. The email shows an "AI suggestion" box.
