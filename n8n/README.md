@@ -110,10 +110,12 @@ The email groups products the same way as `expiry-check.json`: expired → remov
    ```sql
    UPDATE employees SET email = 'your-email@gmail.com' WHERE full_name = 'Anu Thomas';
    ```
-2. In n8n click **Execute**. All nodes turn green, 4 items (Bakery, Dairy, Meat, Vegetables).
-3. You get **"Dairy: 4 products to handle today"** with only Dairy items: Eggs (remove), Milk and Paneer (30% off), Curd (20% off). This is test plan #5.
+2. In n8n click **Execute**. All nodes turn green, 8 items (one per department).
+3. You get **"Dairy: 6 products to handle today"** with only Dairy items: Buttermilk and Eggs (remove), Fresh Cream, Milk and Paneer (30% off), Curd (20% off). This is test plan #5.
 
-The other three emails go to `@example.com` addresses, so Gmail may send you a "delivery failed" message. That is expected.
+Vishnu Das (Dairy, inactive) gets no email, and out-of-stock products (Strawberries, Veg Sandwich) are not listed.
+
+The other seven emails go to `@example.com` addresses, so Gmail may send you a "delivery failed" message. That is expected.
 
 ### Turn on Gemini (optional, task 4.3)
 **Status: future scope.** The Gemini node is built into the workflow but is switched off and has not been tested yet. Today the emails are sent without the AI tip.

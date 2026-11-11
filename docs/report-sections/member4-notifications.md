@@ -29,17 +29,20 @@ The layouts are in `n8n/email-templates/`. They use tables and inline styles so 
 ![Dairy department email received in Gmail](../../n8n/screenshots/member4-dairy-email.png)
 
 ## Testing
-Tested on 10 Nov 2026 with the sample data from `database/database.sql` (dates are relative to the day it runs).
+Tested on 11 Nov 2026 with the final sample data from `database/database.sql` (59 products, 8 departments, 10 employees; dates are relative to the day it runs). The workflow was run after the expiry check workflow (Member 3) had saved the day's discounts.
 
 | Test | Expected | Result |
 |---|---|---|
-| Run the workflow | All nodes succeed, 4 emails (Bakery, Dairy, Meat, Vegetables) | Pass |
-| Dairy employee email (test plan #5) | Only Dairy items: Eggs (remove), Milk and Paneer (30% off), Curd (20% off) | Pass |
-| Vegetables employee email | Only Spinach (30% off) and Tomatoes (20% off) | Pass |
-| Employee with nothing expiring within 3 days (Fruits) | No email | Pass |
+| Run the workflow | All nodes succeed, 8 emails (one per department) | Pass |
+| Dairy employee email (test plan #5) | Only Dairy items: Buttermilk and Eggs (remove), Fresh Cream, Milk and Paneer (30% off), Curd (20% off) | Pass |
+| Inactive employee (Vishnu Das, Dairy) | No email | Pass |
 | Manager account | Not included in department emails | Pass |
+| Out-of-stock products (Strawberries, Veg Sandwich) | Not listed in any email | Pass |
 | New prices in email | Match the discount rule (for example Milk ₹30 → ₹21) | Pass |
+| Discounts compared with the expiry check | Same discount for every product in the list | Pass |
 | Gemini node switched off | Email is still sent, without the AI box | Pass |
+
+An earlier test on 10 Nov with the first, smaller sample data also passed: 4 emails, and the Fruits employee, who had nothing expiring within 3 days, got no email.
 
 ## Problems faced and how we solved them
 - **Shared database could not be used for testing.** Running `database.sql` deletes and recreates all tables, so running it on the team's shared Supabase would have deleted everyone's data. I created my own Supabase project for testing and will switch the n8n credential to the shared database on integration day.
