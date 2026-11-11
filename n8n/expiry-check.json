@@ -1,5 +1,5 @@
 {
-  "name": "Expiry Date Monitor (PostgreSQL)",
+  "name": "Expiry Check",
   "nodes": [
     {
       "parameters": {
@@ -11,11 +11,14 @@
           ]
         }
       },
-      "id": "c1000000-0000-4000-8000-000000000001",
+      "id": "eb7452ca-a8ee-4e63-8378-8fd1c510672d",
       "name": "Every Morning 8 AM",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 0]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
@@ -23,11 +26,20 @@
         "query": "UPDATE products SET\n  discount_percent = CASE\n    WHEN expiry_date < CURRENT_DATE THEN 0\n    WHEN expiry_date - CURRENT_DATE <= 1 THEN 30\n    WHEN expiry_date - CURRENT_DATE <= 3 THEN 20\n    ELSE 0\n  END,\n  action = CASE\n    WHEN expiry_date < CURRENT_DATE THEN 'EXPIRED - Remove from shelf'\n    WHEN expiry_date - CURRENT_DATE <= 1 THEN 'Apply 30% discount'\n    WHEN expiry_date - CURRENT_DATE <= 3 THEN 'Apply 20% discount'\n    ELSE 'No action'\n  END,\n  last_checked = NOW();",
         "options": {}
       },
-      "id": "c1000000-0000-4000-8000-000000000002",
+      "id": "871f1604-be4a-4945-9ab5-4d69c5c310b0",
       "name": "Calculate & Save Discounts",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [240, 0]
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "W3CVTAwQMwxNlev7",
+          "name": "Postgres account 2"
+        }
+      }
     },
     {
       "parameters": {
@@ -35,12 +47,21 @@
         "query": "SELECT\n  COUNT(*)::int AS total,\n  string_agg(\n    '- ' || product_name || ' (' || quantity || ' units) - ' ||\n    CASE WHEN expiry_date < CURRENT_DATE THEN 'expired'\n         ELSE (expiry_date - CURRENT_DATE) || ' day(s) left' END ||\n    ' - ' || action,\n    E'\\n' ORDER BY expiry_date\n  ) AS product_list\nFROM products\nWHERE expiry_date <= CURRENT_DATE + 3\n  AND quantity > 0;",
         "options": {}
       },
-      "id": "c1000000-0000-4000-8000-000000000003",
+      "id": "50e11a3f-8d50-4831-8a79-8786bb017061",
       "name": "Get Products Needing Attention",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [480, 0],
-      "executeOnce": true
+      "position": [
+        480,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "postgres": {
+          "id": "W3CVTAwQMwxNlev7",
+          "name": "Postgres account 2"
+        }
+      }
     },
     {
       "parameters": {
@@ -48,7 +69,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "loose"
+            "typeValidation": "loose",
+            "version": 1
           },
           "conditions": [
             {
@@ -65,11 +87,14 @@
         },
         "options": {}
       },
-      "id": "c1000000-0000-4000-8000-000000000004",
+      "id": "3949f4e6-e3b4-4f55-a3b0-7ec149f74441",
       "name": "Any Products?",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2,
-      "position": [720, 0]
+      "position": [
+        720,
+        0
+      ]
     },
     {
       "parameters": {
@@ -79,28 +104,82 @@
         "message": "=Good morning,\n\nThese products need attention today:\n\n{{ $json.product_list }}\n\nRegards,\nExpiry Monitor",
         "options": {}
       },
-      "id": "c1000000-0000-4000-8000-000000000005",
+      "id": "bf88c0a0-4e30-4206-becb-3ce442aed55e",
       "name": "Email Manager",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
-      "position": [960, 0]
+      "position": [
+        960,
+        0
+      ],
+      "webhookId": "be3bf7d6-ebc9-496d-8395-47e2531ffccb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "l2MEqZlGXuWbG22A",
+          "name": "Gmail account"
+        }
+      }
     }
   ],
+  "pinData": {},
   "connections": {
     "Every Morning 8 AM": {
-      "main": [[{ "node": "Calculate & Save Discounts", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Calculate & Save Discounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Calculate & Save Discounts": {
-      "main": [[{ "node": "Get Products Needing Attention", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Get Products Needing Attention",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Products Needing Attention": {
-      "main": [[{ "node": "Any Products?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Any Products?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Any Products?": {
-      "main": [[{ "node": "Email Manager", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Email Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
+  "active": false,
   "settings": {
-    "executionOrder": "v1"
-  }
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "2d564111-d5f0-4f6a-afea-f87939707d10",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7ae810ccd662cbae3231284633e76a1e792bc49bb84732a483fce35bb44c58e"
+  },
+  "nodeGroups": [],
+  "id": "TesonKsr07DQELDq",
+  "tags": []
 }
