@@ -37,6 +37,7 @@ Budibase and n8n connect as the `postgres` user (the table owner), so they still
 |---|---|
 | id | SERIAL PK |
 | name | VARCHAR(50), unique |
+| image_url | TEXT, default picture for the department's products |
 
 ### employees
 | Column | Type | Notes |
@@ -62,6 +63,7 @@ Budibase and n8n connect as the `postgres` user (the table owner), so they still
 | discount_percent | INT | Set by n8n |
 | action | VARCHAR(100) | Set by n8n |
 | last_checked | TIMESTAMP | Set by n8n |
+| image_url | TEXT | Optional. Leave empty to use the department picture |
 
 ### products_live (view, read-only): use this in the dashboards
 Calculates the discount from **today's date** every time it is read, so it is always up to date, even if n8n has not run yet. Uses the same discount rules as n8n (below).
@@ -75,6 +77,7 @@ Calculates the discount from **today's date** every time it is read, so it is al
 | discount_percent, action | Live values |
 | offer_price | Price after discount |
 | stock_value | price × quantity |
+| image_url | Product picture, or the department picture if the product has none |
 
 **Read** from `products_live`. **Add, edit and delete** still go to the `products` table.
 
@@ -89,9 +92,17 @@ FROM products_live;
 ```
 
 ### customer_offers (view, read-only)
-`product_name, department, original_price, discount_percent, offer_price, best_before`
+`product_name, department, original_price, discount_percent, offer_price, best_before, image_url`
 
 Built on `products_live`. Shows only products with a discount, not expired and in stock.
+
+## Product pictures
+- Every product has its own picture, named from the product name (e.g. `chicken-nuggets.jpg`). Full list: `product-images/IMAGE-LIST.md`.
+- 8 department pictures (`dairy.jpg`, ...) are the fallback for products without their own picture, e.g. new products added in Budibase.
+- They are uploaded to the **public** Supabase Storage bucket `product-images`, so everyone can see them (not only on localhost).
+- `products_live.image_url` and `customer_offers.image_url` give the picture URL. In Budibase, use a **Cards block** and bind the image to `{{ image_url }}`.
+- To give one product its own picture, upload it to the bucket and set `products.image_url` to its URL.
+- Existing database: run `add-product-images.sql` once (adds the columns without deleting data). Fresh install: `database.sql` already includes it.
 
 ## Discount rules
 | Days left | discount_percent | action |

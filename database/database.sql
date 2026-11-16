@@ -10,8 +10,9 @@ DROP TABLE IF EXISTS departments;
 
 -- 1. Departments
 CREATE TABLE departments (
-    id   SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL
+    id        SERIAL PRIMARY KEY,
+    name      VARCHAR(50) UNIQUE NOT NULL,
+    image_url TEXT        -- default picture for every product in this department
 );
 
 -- 2. Employees (login accounts are created in the dashboard tool;
@@ -38,8 +39,41 @@ CREATE TABLE products (
     expiry_date      DATE          NOT NULL,
     discount_percent INT           DEFAULT 0,
     action           VARCHAR(100)  DEFAULT 'No action',
-    last_checked     TIMESTAMP
+    last_checked     TIMESTAMP,
+    image_url        TEXT          -- optional; overrides the department picture
 );
+
+-- 3b. Adding a product that already exists (same name, department and expiry
+--     date) adds to its quantity instead of creating a duplicate row.
+--     A different expiry date is a different batch and gets its own row.
+CREATE OR REPLACE FUNCTION merge_duplicate_stock() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    existing_id INT;
+BEGIN
+    SELECT id INTO existing_id
+    FROM products
+    WHERE lower(trim(product_name)) = lower(trim(NEW.product_name))
+      AND department_id = NEW.department_id
+      AND expiry_date   = NEW.expiry_date
+    ORDER BY id
+    LIMIT 1;
+
+    IF existing_id IS NOT NULL THEN
+        UPDATE products
+        SET quantity = quantity + COALESCE(NEW.quantity, 0),
+            price    = COALESCE(NEW.price, price)
+        WHERE id = existing_id;
+        RETURN NULL;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER merge_duplicate_stock
+BEFORE INSERT ON products
+FOR EACH ROW EXECUTE FUNCTION merge_duplicate_stock();
 
 -- 4. Live product view (read-only, for the dashboards)
 --    Calculates days left, discount and action from TODAY's date every time
@@ -66,7 +100,8 @@ SELECT
     r.action,
     ROUND(p.price * (100 - r.discount_percent) / 100, 2) AS offer_price,
     p.price * p.quantity AS stock_value,
-    p.last_checked
+    p.last_checked,
+    COALESCE(p.image_url, d.image_url) AS image_url
 FROM products p
 JOIN departments d ON d.id = p.department_id
 CROSS JOIN LATERAL (SELECT p.expiry_date - CURRENT_DATE AS days_left) t
@@ -95,7 +130,8 @@ SELECT
     price AS original_price,
     discount_percent,
     offer_price,
-    expiry_date AS best_before
+    expiry_date AS best_before,
+    image_url
 FROM products_live
 WHERE discount_percent > 0
   AND days_left >= 0
@@ -106,6 +142,13 @@ WHERE discount_percent > 0
 INSERT INTO departments (name) VALUES
 ('Dairy'), ('Bakery'), ('Meat'), ('Vegetables'),
 ('Fruits'), ('Beverages'), ('Snacks'), ('Grocery');
+
+-- Department pictures: files from database/product-images/, uploaded to the
+-- public Supabase Storage bucket "product-images" (dairy.jpg, bakery.jpg, ...).
+-- The URLs point to the shared Supabase project (uxzoipytinpxyeaqpmyc).
+UPDATE departments
+SET image_url = 'https://uxzoipytinpxyeaqpmyc.supabase.co/storage/v1/object/public/product-images/'
+                || lower(name) || '.jpg';
 
 -- One employee per department, plus one inactive employee to test "deactivate"
 INSERT INTO employees (full_name, email, phone, department_id, role, is_active)
@@ -200,6 +243,24 @@ FROM (VALUES
     ('Tea Powder',      'Grocery',     35, 120.00, 240)
 ) AS v(name, dept, qty, price, days)
 JOIN departments d ON d.name = v.dept;
+
+-- Product pictures: one file per product, named from the product name
+-- (small letters, "-" instead of spaces), e.g. "Chicken Nuggets" -> chicken-nuggets.jpg.
+-- Only products listed here have their own picture; the others show the
+-- department picture. Add a name here when you upload a new product picture.
+UPDATE products
+SET image_url = 'https://uxzoipytinpxyeaqpmyc.supabase.co/storage/v1/object/public/product-images/'
+                || replace(lower(product_name), ' ', '-') || '.jpg'
+WHERE replace(lower(product_name), ' ', '-') IN (
+    'apples', 'bananas', 'biscuits', 'bread', 'buns', 'cake', 'carrots',
+    'chicken', 'chicken-nuggets', 'chocolate-bar', 'cola', 'cold-coffee',
+    'cookies', 'cooking-oil', 'coriander', 'croissant', 'cucumber', 'eggs',
+    'fish', 'grapes', 'lassi', 'mango-juice', 'mangoes', 'milk', 'mineral-water',
+    'muffins', 'mushrooms', 'mutton', 'noodles', 'onions', 'orange-juice',
+    'papaya', 'popcorn', 'potato-chips', 'potatoes', 'prawns', 'rice', 'rusk',
+    'samosa', 'sausages', 'spinach', 'strawberries', 'sugar', 'tea-powder',
+    'tomatoes', 'veg-sandwich', 'watermelon', 'wheat-flour', 'yogurt'
+);
 
 -- ---------- Security ----------
 -- Block the public Supabase API. Budibase and n8n connect as the "postgres"
