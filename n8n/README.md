@@ -103,7 +103,7 @@ The email groups products the same way as `expiry-check.json`: expired → remov
 
    Use the **Session pooler**, not the direct connection. The direct connection on the free plan does not work from n8n Cloud.
 3. **Email Employee** → **Sign in with Google**.
-4. **Build Department Emails** → replace `DASHBOARD_URL` at the top of the code with the Budibase employee stock page link.
+4. **Build Department Emails** → `DASHBOARD_URL` at the top of the code is the link behind the "Update my stock" button. It points to the published Budibase app (Member 6). Change it only if the app's address changes.
 
 ### Test
 1. In Supabase SQL Editor, send Anu's email to yourself:

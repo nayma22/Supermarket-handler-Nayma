@@ -3,7 +3,7 @@
 // Input: one item per employee from "Get Department Items" (optionally passed through "Gemini Tip").
 // Output: one item per employee { email, full_name, department, subject, html } for the Gmail node.
 
-const DASHBOARD_URL = 'https://YOUR-APP.budibase.app'; // TODO: Budibase link to /employee/stock (ask Sachini)
+const DASHBOARD_URL = 'https://yuvtuhj0b.budibase.app/app/default%20workspace/supermarket-dashbord'; // Budibase app (Member 6); employees open Update Stock from here
 
 const rows = $('Get Department Items').all();
 const geminiItems = $input.all();
