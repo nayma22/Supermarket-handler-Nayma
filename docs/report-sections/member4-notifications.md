@@ -26,7 +26,7 @@ The layouts are in `n8n/email-templates/`. They use tables and inline styles so 
 ## Screenshots
 ![Department alert workflow in n8n, all nodes run successfully](../../n8n/screenshots/member4-workflow.png)
 
-![Dairy department email received in Gmail](../../n8n/screenshots/member4-dairy-email.png)
+![Bakery department email received in Gmail, from the shared database](../../n8n/screenshots/member4-bakery-email-shared-db.png)
 
 ## Testing
 Tested on 11 Nov 2026 with the final sample data from `database/database.sql` (59 products, 8 departments, 10 employees; dates are relative to the day it runs). The workflow was run after the expiry check workflow (Member 3) had saved the day's discounts.
